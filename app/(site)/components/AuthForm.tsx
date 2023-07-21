@@ -1,21 +1,25 @@
 "use client";
 import Button from "@/app/components/Button";
 import Input from "@/app/components/inputs/Input";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 import AuthSocialButton from "./AuthSocialButton";
 
 // Next Auth
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 
 // Icons
 import { BsGithub, BsGoogle } from "react-icons/bs";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 type Variant = "LOGIN" | "REGISTER";
 
 const AuthForm = () => {
+  const session = useSession();
+  const router = useRouter();
+
   const [variant, setVariant] = useState<Variant>("LOGIN");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,12 +43,21 @@ const AuthForm = () => {
     },
   });
 
+  useEffect(() => {
+    if (session?.status === "authenticated") {
+      router.push("/users");
+    }
+  }, [session.status, router]);
+
   const onSubmit: SubmitHandler<FieldValues> = (data) => {
     setIsLoading(true);
     if (variant === "REGISTER") {
       // Axios Sign Up
       axios
         .post("/api/register", data)
+        .then(() => {
+          signIn("credentials", data);
+        })
         .catch(() => toast.error("Something went wrong!"))
         .finally(() => {
           setIsLoading(false);
@@ -62,6 +75,7 @@ const AuthForm = () => {
           }
           if (callback?.ok && !callback?.error) {
             toast.success("Logged In!");
+            router.push("/users");
           }
         })
         .finally(() => {
@@ -74,6 +88,18 @@ const AuthForm = () => {
     setIsLoading(true);
 
     // NextAuth Social Login
+    signIn(action, { redirect: false })
+      .then((callback) => {
+        if (callback?.error) {
+          toast.error("Invalid credentials");
+        }
+        if (callback?.ok && !callback?.error) {
+          toast.success("Logged In!");
+        }
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   return (
