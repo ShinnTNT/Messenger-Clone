@@ -7,6 +7,7 @@ import AuthSocialButton from "./AuthSocialButton";
 
 // Icons
 import { BsGithub, BsGoogle } from "react-icons/bs";
+import axios from "axios";
 
 type Variant = "LOGIN" | "REGISTER";
 
@@ -38,6 +39,7 @@ const AuthForm = () => {
     setIsLoading(true);
     if (variant === "REGISTER") {
       // Axios Sign Up
+      axios.post("/api/register", data);
     }
     if (variant === "LOGIN") {
       // Axios Sign IN
